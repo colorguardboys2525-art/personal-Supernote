@@ -1,0 +1,477 @@
+<!-- Firebase & GitHub Pages Setup Instructions -->
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>セットアップガイド - 意識チェックシート</title>
+  <style>
+    body {
+      font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1, h2, h3 {
+      color: #2563eb;
+      margin-top: 2em;
+    }
+    h1 {
+      border-bottom: 3px solid #2563eb;
+      padding-bottom: 10px;
+    }
+    .setup-step {
+      background: white;
+      padding: 20px;
+      margin: 15px 0;
+      border-left: 4px solid #2563eb;
+      border-radius: 5px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .code-block {
+      background: #1e1e1e;
+      color: #00ff00;
+      padding: 15px;
+      border-radius: 5px;
+      overflow-x: auto;
+      font-family: 'Courier New', monospace;
+      margin: 10px 0;
+    }
+    .warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+    .success {
+      background: #d4edda;
+      border-left: 4px solid #28a745;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+    .info {
+      background: #d1ecf1;
+      border-left: 4px solid #17a2b8;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 15px 0;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 12px;
+      text-align: left;
+    }
+    th {
+      background: #f8f9fa;
+      font-weight: 600;
+    }
+    .checklist {
+      list-style: none;
+      padding: 0;
+    }
+    .checklist li {
+      padding: 8px 0;
+      padding-left: 25px;
+      position: relative;
+    }
+    .checklist li:before {
+      content: "☐";
+      position: absolute;
+      left: 0;
+      color: #2563eb;
+      font-weight: bold;
+    }
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin: 15px 0;
+    }
+    button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-family: inherit;
+    }
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
+    }
+  </style>
+</head>
+<body>
+
+<h1>🚀 意識チェックシート - Firebase & GitHub Pages セットアップガイド</h1>
+
+<div class="success">
+  <strong>✅ ようこそ！</strong> このガイドでは、アプリケーションを Firebase とGitHub Pages に統合する手順を説明します。
+</div>
+
+<!-- ========================================
+     ステップ1: Firebase セットアップ
+     ======================================== -->
+<div class="setup-step">
+  <h2>ステップ1️⃣：Firebase プロジェクトの作成</h2>
+  
+  <p>まず、Firebase Console でプロジェクトを作成します。</p>
+  
+  <ol>
+    <li><a href="https://console.firebase.google.com/" target="_blank"><strong>Firebase Console</strong></a> にアクセス</li>
+    <li>Googleアカウントでログイン</li>
+    <li>「プロジェクトを作成」をクリック</li>
+    <li>プロジェクト名を入力（例：<code>awareness-check-sheet</code>）</li>
+    <li>「続行」をクリック</li>
+    <li>Google Analytics は「有効化」を選択（推奨）</li>
+    <li>「プロジェクトを作成」をクリック</li>
+  </ol>
+  
+  <div class="info">
+    <strong>💡 ヒント:</strong> プロジェクト ID は後で使用するので、メモしておきましょう。例：<code>awareness-check-sheet-abc123</code>
+  </div>
+</div>
+
+<!-- ========================================
+     ステップ2: Firebase 設定を取得
+     ======================================== -->
+<div class="setup-step">
+  <h2>ステップ2️⃣：Firebase 設定を取得</h2>
+  
+  <p>プロジェクト設定から、アプリケーションの設定を取得します。</p>
+  
+  <ol>
+    <li>Firebase Console でプロジェクトを開く</li>
+    <li>左上のプロジェクト設定アイコン（⚙️）をクリック</li>
+    <li>「プロジェクト設定」タブを選択</li>
+    <li>下にスクロールして「マイアプリ」を探す</li>
+    <li>「ウェブ」アイコンをクリック（初回の場合は「アプリを追加」から）</li>
+    <li>アプリのニックネームを入力（例：<code>awareness-app</code>）</li>
+    <li>「アプリを登録」をクリック</li>
+    <li>表示された設定をコピー</li>
+  </ol>
+  
+  <p><strong>設定例：</strong></p>
+  <div class="code-block">
+const firebaseConfig = {
+  apiKey: "AIza...",
+  authDomain: "awareness-check-sheet-abc123.firebaseapp.com",
+  projectId: "awareness-check-sheet-abc123",
+  storageBucket: "awareness-check-sheet-abc123.appspot.com",
+  messagingSenderId: "123456789000",
+  appId: "1:123456789000:web:abc123def456"
+};</div>
+
+  <div class="warning">
+    <strong>⚠️ 重要:</strong> <code>apiKey</code> はGitHubに公開される可能性があります。Firebaseのセキュリティルールで保護しましょう。
+  </div>
+</div>
+
+<!-- ========================================
+     ステップ3: ローカル設定ファイルを編集
+     ======================================== -->
+<div class="setup-step">
+  <h2>ステップ3️⃣：src/firebase-config.js を編集</h2>
+  
+  <p>ダウンロードした設定をファイルに貼り付けます。</p>
+  
+  <ol>
+    <li><code>src/firebase-config.js</code> をエディタで開く</li>
+    <li>以下の部分を見つける：
+      <div class="code-block">
+export const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+  // ...
+};</div>
+    </li>
+    <li>ステップ2で取得した設定で置き換える</li>
+    <li>ファイルを保存</li>
+  </ol>
+  
+  <div class="success">
+    <strong>✅ 完了！</strong> Firebase 設定がアプリに反映されました。
+  </div>
+</div>
+
+<!-- ========================================
+     ステップ4: ローカルテスト
+     ======================================== -->
+<div class="setup-step">
+  <h2>ステップ4️⃣：ローカルで動作確認</h2>
+  
+  <p>設定が正しく機能しているか確認します。</p>
+  
+  <ol>
+    <li>ターミナル / コマンドプロンプトを開く</li>
+    <li>プロジェクトディレクトリに移動：
+      <div class="code-block">cd "c:\My For7\スーパーノート-アプリ開発\個人チェック表の開発"</div>
+    </li>
+    <li>依存関係をインストール：
+      <div class="code-block">npm install</div>
+    </li>
+    <li>ローカルサーバーを起動：
+      <div class="code-block">npm run dev</div>
+    </li>
+    <li>ブラウザで <a href="http://localhost:8080" target="_blank"><code>http://localhost:8080</code></a> を開く</li>
+    <li>ブラウザのコンソール（F12キー）を開き、エラーがないか確認</li>
+  </ol>
+  
+  <div class="success">
+    <strong>✅ 成功！</strong> アプリが正常に動作している場合、以下のメッセージが表示されます：
+    <div class="code-block">✅ Firebase 初期化完了</div>
+  </div>
+</div>
+
+<!-- ========================================
+     ステップ5: GitHub リポジトリ作成
+     ======================================== -->
+<div class="setup-step">
+  <h2>ステップ5️⃣：GitHub リポジトリを作成</h2>
+  
+  <ol>
+    <li><a href="https://github.com/new" target="_blank"><strong>GitHub で新しいリポジトリ</strong></a>を作成</li>
+    <li>リポジトリ名：<code>awareness-check-sheet</code></li>
+    <li>説明：<code>毎日の意識を記録するチェックシート - Firebase & GitHub Pages版</code></li>
+    <li>「Public」を選択</li>
+    <li>「Add .gitignore」は<strong>スキップ</strong>（既に .gitignore があります）</li>
+    <li>「Create repository」をクリック</li>
+  </ol>
+  
+  <div class="info">
+    <strong>💡 ヒント:</strong> リポジトリURLは <code>https://github.com/your-username/awareness-check-sheet</code> のようになります。
+  </div>
+</div>
+
+<!-- ========================================
+     ステップ6: Git 初期化とコミット
+     ======================================== -->
+<div class="setup-step">
+  <h2>ステップ6️⃣：Git リポジトリを初期化</h2>
+  
+  <p>ローカルコードを GitHub に同期します。</p>
+  
+  <ol>
+    <li>ターミナルでプロジェクトディレクトリにいることを確認</li>
+    <li>Git を初期化（初回のみ）：
+      <div class="code-block">git config --global user.name "Your Name"
+git config --global user.email "your-email@example.com"</div>
+    </li>
+    <li>ファイルをステージ：
+      <div class="code-block">git add .</div>
+    </li>
+    <li>初期コミット：
+      <div class="code-block">git commit -m "Initial commit: Firebase & GitHub Pages setup"</div>
+    </li>
+    <li>リモートリポジトリを追加：
+      <div class="code-block">git remote add origin https://github.com/your-username/awareness-check-sheet.git</div>
+    </li>
+    <li>main ブランチに push：
+      <div class="code-block">git branch -M main
+git push -u origin main</div>
+    </li>
+  </ol>
+  
+  <div class="success">
+    <strong>✅ 完了！</strong> コードが GitHub にアップロードされました。
+  </div>
+</div>
+
+<!-- ========================================
+     ステップ7: GitHub Pages 有効化
+     ======================================== -->
+<div class="setup-step">
+  <h2>ステップ7️⃣：GitHub Pages を有効化</h2>
+  
+  <ol>
+    <li>GitHub リポジトリを開く</li>
+    <li>「⚙️ Settings」をクリック</li>
+    <li>左メニューの「Pages」をクリック</li>
+    <li>「Build and deployment」の「Source」で「GitHub Actions」を選択</li>
+    <li>「Save」をクリック</li>
+  </ol>
+  
+  <div class="info">
+    <strong>💡 ヒント:</strong> GitHub Actionsにより、コード変更時に自動的にデプロイされます。
+  </div>
+</div>
+
+<!-- ========================================
+     ステップ8: Firebase 認証を有効化
+     ======================================== -->
+<div class="setup-step">
+  <h2>ステップ8️⃣：Firebase 認証を有効化</h2>
+  
+  <p>後で認証機能を実装するため、事前に有効化します。</p>
+  
+  <ol>
+    <li>Firebase Console でプロジェクトを開く</li>
+    <li>左メニューの「Authentication」をクリック</li>
+    <li>「Sign-in method」タブを開く</li>
+    <li>「Google」をクリック</li>
+    <li>「有効にする」をオンにする</li>
+    <li>プロジェクト名を入力（表示用）</li>
+    <li>「保存」をクリック</li>
+    <li>同様に「Email/Password」も有効化（推奨）</li>
+  </ol>
+  
+  <div class="success">
+    <strong>✅ 完了！</strong> 認証の準備が整いました。
+  </div>
+</div>
+
+<!-- ========================================
+     ステップ9: Realtime Database 作成
+     ======================================== -->
+<div class="setup-step">
+  <h2>ステップ9️⃣：Realtime Database を作成</h2>
+  
+  <ol>
+    <li>Firebase Console でプロジェクトを開く</li>
+    <li>左メニューの「Realtime Database」をクリック</li>
+    <li>「データベースを作成」をクリック</li>
+    <li>ロケーションを選択（日本の場合 <code>asia-northeast1</code>）</li>
+    <li>セキュリティルール：「テストモード」を選択
+      <div class="warning">
+        <strong>⚠️ 注意:</strong> テストモード（30日間制限）またはルール編集を選択。本番環境では必ずセキュリティルールを設定してください。
+      </div>
+    </li>
+    <li>「有効にする」をクリック</li>
+  </ol>
+  
+  <div class="success">
+    <strong>✅ 完了！</strong> Realtime Database が作成されました。
+  </div>
+</div>
+
+<!-- ========================================
+     ステップ10: Cloud Storage 設定
+     ======================================== -->
+<div class="setup-step">
+  <h2>ステップ🔟：Cloud Storage を設定</h2>
+  
+  <ol>
+    <li>Firebase Console でプロジェクトを開く</li>
+    <li>左メニューの「Storage」をクリック</li>
+    <li>「バケットを作成」をクリック</li>
+    <li>デフォルト設定のまま進める</li>
+    <li>ロケーション：アジア（<code>asia-northeast1</code>）</li>
+    <li>「作成」をクリック</li>
+  </ol>
+  
+  <div class="success">
+    <strong>✅ 完了！</strong> Cloud Storage が準備できました。
+  </div>
+</div>
+
+<!-- ========================================
+     ステップ11: デプロイ確認
+     ======================================== -->
+<div class="setup-step">
+  <h2>ステップ1️⃣1️⃣：デプロイ確認</h2>
+  
+  <ol>
+    <li>GitHub リポジトリを開く</li>
+    <li>「Actions」タブをクリック</li>
+    <li>「Firebase Deploy」ワークフローが実行中か確認</li>
+    <li>実行が完了するまで待機（通常3-5分）</li>
+    <li>実行が成功したら、「Deployments」で確認</li>
+  </ol>
+  
+  <div class="info">
+    <strong>💡 アクセスURL:</strong>
+    <div class="code-block">https://your-username.github.io/awareness-check-sheet/</div>
+  </div>
+</div>
+
+<!-- ========================================
+     まとめ
+     ======================================== -->
+<div class="setup-step">
+  <h2>✨ セットアップ完了！</h2>
+  
+  <p><strong>おめでとうございます！</strong> 以下のセットアップが完了しました：</p>
+  
+  <ul class="checklist">
+    <li>Firebase プロジェクトの作成</li>
+    <li>Firebase 認証の有効化</li>
+    <li>Realtime Database の作成</li>
+    <li>Cloud Storage の設定</li>
+    <li>GitHub リポジトリの作成</li>
+    <li>GitHub Pages でのホスティング</li>
+    <li>GitHub Actions による自動デプロイ</li>
+  </ul>
+  
+  <p><strong>次のステップ：</strong></p>
+  <ol>
+    <li>GitHub Pages のURLからアプリにアクセス</li>
+    <li>新規ユーザーを作成してテスト</li>
+    <li>チェックシートを記入して確認</li>
+    <li>Firebase Console でデータが保存されているか確認</li>
+  </ol>
+  
+  <div class="success">
+    <strong>✅ アプリは以下のURLでアクセス可能です：</strong>
+    <div class="code-block">https://your-username.github.io/awareness-check-sheet/</div>
+    <p>（<code>your-username</code> を自分の GitHub ユーザー名に置き換えてください）</p>
+  </div>
+</div>
+
+<!-- ========================================
+     トラブルシューティング
+     ======================================== -->
+<div class="setup-step">
+  <h2>🔧 トラブルシューティング</h2>
+  
+  <h3>❌ Firebase に接続できない</h3>
+  <ul>
+    <li>✓ <code>src/firebase-config.js</code> の設定を確認</li>
+    <li>✓ Firebase Console でプロジェクトが有効になっているか確認</li>
+    <li>✓ ブラウザのコンソール（F12キー）でエラーを確認</li>
+    <li>✓ インターネット接続を確認</li>
+  </ul>
+  
+  <h3>❌ GitHub Pages にアクセスできない</h3>
+  <ul>
+    <li>✓ Settings → Pages で「GitHub Actions」が選択されているか確認</li>
+    <li>✓ Actions タブでデプロイが成功しているか確認</li>
+    <li>✓ URL が正しいか確認（<code>https://your-username.github.io/awareness-check-sheet/</code>）</li>
+    <li>✓ ブラウザのキャッシュをクリア（Ctrl+Shift+Delete）</li>
+  </ul>
+  
+  <h3>❌ 画像エクスポートが失敗する</h3>
+  <ul>
+    <li>✓ 外部リソース（フォント等）が CORS で許可されているか確認</li>
+    <li>✓ <code>html2canvas</code> ライブラリがロードされているか確認</li>
+  </ul>
+</div>
+
+<!-- ========================================
+     リソース
+     ======================================== -->
+<div class="setup-step">
+  <h2>📚 参考リソース</h2>
+  
+  <ul>
+    <li><a href="https://firebase.google.com/docs/web/setup" target="_blank">Firebase Web SDK ドキュメント</a></li>
+    <li><a href="https://github.com/features/actions" target="_blank">GitHub Actions ドキュメント</a></li>
+    <li><a href="https://docs.github.com/en/pages" target="_blank">GitHub Pages ドキュメント</a></li>
+    <li><a href="https://firebase.google.com/docs/database/security" target="_blank">Realtime Database セキュリティルール</a></li>
+  </ul>
+</div>
+
+</body>
+</html>

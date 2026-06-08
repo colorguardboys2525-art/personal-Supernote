@@ -1,0 +1,941 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>意識チェックシート</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { checkFirebaseConnection } from './src/storage-manager.js';
+    window.checkFirebaseConnection = checkFirebaseConnection;
+  </script>
+
+  <style>
+    /* ============================================================
+       ▼▼▼ カスタマイズ設定（ここを編集するだけでデザインが変わります）▼▼▼
+    ============================================================ */
+    :root {
+      /* フォント */
+      --font: 'Noto Sans JP', sans-serif;
+
+      /* 文字サイズ ------------------------------------------ */
+      --sz-name:        1.8rem;   /* シート上の名前の大きさ */
+      --sz-date:        1.4rem;   /* 週の期間の大きさ */
+      --sz-title:       0.95rem;  /* タイトル「意識チェックシート」の大きさ */
+      --sz-table-head:  0.72rem;  /* 表ヘッダー（曜日・日付）の大きさ */
+      --sz-table-item:  0.75rem;  /* 表の項目名の大きさ */
+      --sz-symbol:      1rem;     /* ○×△ の大きさ */
+      --sz-reflect-lbl: 0.8rem;   /* 反省欄ラベルの大きさ */
+      --sz-reflect-txt: 0.85rem;  /* 反省欄入力文字の大きさ */
+      --sz-btn:         0.85rem;  /* ボタン文字の大きさ */
+      --sz-small:       0.68rem;  /* 小さな補足文字の大きさ */
+
+      /* 余白・角丸 ------------------------------------------ */
+      --gap:            1rem;     /* セクション間の余白 */
+      --pad:            1rem;     /* カード内余白 */
+      --radius-card:    1rem;     /* カードの角丸 */
+      --radius-btn:     0.7rem;   /* ボタンの角丸 */
+      --radius-input:   0.5rem;   /* 入力欄の角丸 */
+
+      /* シンボルの色 ---------------------------------------- */
+      --c-circle:   #2563eb;  /* ○ の色（青） */
+      --c-cross:    #ef4444;  /* × の色（赤） */
+      --c-triangle: #f59e0b;  /* △ の色（黄） */
+
+      /* ページ背景・カード背景 ------------------------------ */
+      --c-bg:   #f3f4f6;
+      --c-card: #ffffff;
+
+      /* 曜日境界線の太さ（太くすると区切りが見やすい） ------ */
+      --border-day: 2px;
+    }
+
+    /* カラーテーマ（--thXX を変えるとテーマ色が変わります） */
+    /* 使用中テーマは JS 側の THEMES オブジェクトで切り替えます */
+    :root {
+      --th:        #2563eb;  /* メインカラー */
+      --th-light:  #eff6ff;  /* 薄い背景色 */
+      --th-text:   #1d4ed8;  /* テキスト色 */
+      --th-border: #bfdbfe;  /* 境界線色 */
+    }
+    /* ============================================================
+       ▲▲▲ カスタマイズ設定ここまで ▲▲▲
+    ============================================================ */
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--c-bg); color: #111827; min-height: 100vh; }
+
+    /* --- 汎用カード --- */
+    .card {
+      background: var(--c-card);
+      border-radius: var(--radius-card);
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+
+    /* --- ボタン --- */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      font-family: var(--font); font-size: var(--sz-btn); font-weight: 600;
+      padding: 8px 16px; border-radius: var(--radius-btn);
+      cursor: pointer; border: none; transition: opacity .15s, background .15s;
+    }
+    .btn-primary  { background: var(--th); color: #fff; }
+    .btn-primary:hover  { opacity: .88; }
+    .btn-primary:disabled  { opacity: .4; cursor: not-allowed; }
+    .btn-outline  { background: #fff; color: #374151; border: 1.5px solid #d1d5db; }
+    .btn-outline:hover  { background: #f9fafb; }
+    .btn-outline:disabled  { opacity: .4; cursor: not-allowed; }
+    .btn-ghost    { background: rgba(255,255,255,.18); color: rgba(255,255,255,.92); border: none; }
+    .btn-ghost:hover    { background: rgba(255,255,255,.28); }
+
+    /* --- フォーム部品 --- */
+    input, textarea {
+      font-family: var(--font); font-size: var(--sz-reflect-txt);
+      border: 1.5px solid #d1d5db; border-radius: var(--radius-input);
+      padding: 7px 11px; width: 100%; outline: none;
+      transition: border-color .15s; background: #fff;
+    }
+    input:focus, textarea:focus { border-color: var(--th); }
+    textarea { resize: none; min-height: 58px; }
+
+    /* ============================================================
+       ホーム画面
+    ============================================================ */
+    .home-wrap { max-width: 512px; margin: 0 auto; padding: 32px 16px; }
+
+    .home-card {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--c-card); border-radius: var(--radius-card);
+      border: 1px solid #e5e7eb; padding: 13px 15px;
+      cursor: pointer; transition: box-shadow .15s; width: 100%; text-align: left;
+      font-family: var(--font);
+    }
+    .home-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.1); }
+
+    /* パスワード入力ヒント（目立つ黄色枠） */
+    .pw-hint {
+      background: #fffbeb; border: 1.5px dashed #fbbf24;
+      border-radius: var(--radius-input); padding: 9px 13px;
+      font-size: var(--sz-small); color: #92400e; margin-bottom: 8px;
+    }
+
+    /* ============================================================
+       シートヘッダー（タイトルバー）
+    ============================================================ */
+    .sheet-header {
+      background: var(--th); color: #fff;
+      border-radius: var(--radius-card); padding: var(--pad);
+      box-shadow: 0 4px 12px rgba(0,0,0,.15);
+    }
+    .sheet-header .toolbar {
+      display: flex; justify-content: center; gap: 8px; margin-bottom: 10px;
+    }
+    .sheet-header .sheet-title {
+      text-align: center; font-size: var(--sz-title); font-weight: 600; opacity: .85;
+    }
+
+    /* ============================================================
+       名前・期間（タイトルバーの真下・保存範囲の先頭）
+    ============================================================ */
+    .name-date-block {
+      text-align: center; padding: 12px 0 4px;
+    }
+    .name-date-block .display-name {
+      font-size: var(--sz-name); font-weight: 800; color: #111827; margin-bottom: 4px;
+    }
+    .name-date-block .display-date {
+      font-size: var(--sz-date); font-weight: 700; color: #374151;
+    }
+
+    /* ============================================================
+       チェック表
+    ============================================================ */
+    .check-table { width: 100%; border-collapse: collapse; }
+    .check-table thead tr { background: var(--th-light); }
+
+    /* 項目列ヘッダー */
+    .check-table th.col-item {
+      text-align: left; padding: 9px 10px;
+      font-size: var(--sz-table-head); font-weight: 700; color: var(--th-text);
+      border-right: var(--border-day) solid var(--th-border);
+      position: sticky; left: 0; background: var(--th-light); z-index: 2;
+      min-width: 80px;
+    }
+    /* 曜日ヘッダー */
+    .check-table th.col-day {
+      text-align: center; padding: 9px 4px;
+      font-size: var(--sz-table-head); font-weight: 700; color: var(--th-text);
+      border-left: var(--border-day) solid var(--th-border);
+      min-width: 52px;
+    }
+    /* 項目列データ */
+    .check-table td.col-item {
+      font-size: var(--sz-table-item); font-weight: 500; text-align: left;
+      padding: 7px 10px; border-right: var(--border-day) solid var(--th-border);
+      position: sticky; left: 0; z-index: 1;
+    }
+    /* 曜日データ */
+    .check-table td.col-day {
+      text-align: center; padding: 6px 2px;
+      border-left: var(--border-day) solid var(--th-border);
+    }
+    .check-table tbody tr { border-top: 1px solid #f3f4f6; }
+    .check-table tbody tr:nth-child(even) td { background: #f9fafb; }
+    .check-table tbody tr:nth-child(odd)  td { background: #ffffff; }
+    .check-table tbody tr:nth-child(even) td.col-item { background: #f9fafb; }
+    .check-table tbody tr:nth-child(odd)  td.col-item { background: #ffffff; }
+
+    /* ============================================================
+       シンボルボタン（○×△）
+    ============================================================ */
+    .sym-btn {
+      width: 26px; height: 26px; border-radius: 5px;
+      border: 1.5px solid #d1d5db; background: #fff;
+      font-size: var(--sz-symbol); font-weight: 700;
+      cursor: pointer; transition: all .1s;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .sym-btn:hover { border-color: #9ca3af; }
+    .sym-btn.sel-o { background: var(--c-circle);   color: #fff; border-color: var(--c-circle);   transform: scale(1.1); }
+    .sym-btn.sel-x { background: var(--c-cross);    color: #fff; border-color: var(--c-cross);    transform: scale(1.1); }
+    .sym-btn.sel-t { background: var(--c-triangle); color: #fff; border-color: var(--c-triangle); transform: scale(1.1); }
+
+    .sym-fixed-o { font-size: var(--sz-symbol); font-weight: 700; color: var(--c-circle); }
+    .sym-fixed-x { font-size: var(--sz-symbol); font-weight: 700; color: var(--c-cross); }
+    .sym-fixed-t { font-size: var(--sz-symbol); font-weight: 700; color: var(--c-triangle); }
+    .sym-none    { font-size: var(--sz-small); color: #9ca3af; }
+
+    /* ============================================================
+       反省欄
+    ============================================================ */
+    .reflect-label {
+      font-size: var(--sz-reflect-lbl); font-weight: 700;
+      color: var(--th-text); display: block; margin-bottom: 4px;
+    }
+
+    /* ============================================================
+       モーダル（設定・履歴）
+    ============================================================ */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      backdrop-filter: blur(4px); z-index: 50;
+      display: none; align-items: flex-end; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-panel {
+      background: var(--c-card); width: 100%; max-width: 512px;
+      border-radius: 1.5rem 1.5rem 0 0; padding: 22px;
+      max-height: 85vh; overflow-y: auto;
+      animation: slideUp .2s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    /* ============================================================
+       ページ切り替え
+    ============================================================ */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* 保存中オーバーレイ */
+    #overlay-exporting {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.5); z-index: 100;
+      align-items: center; justify-content: center;
+    }
+    #overlay-exporting.show { display: flex; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     ホーム画面：ユーザー選択
+============================================================ -->
+<div id="page-home" class="page active">
+  <div class="home-wrap">
+
+    <div style="text-align:center; margin-bottom:28px;">
+      <div style="font-size:2.2rem; margin-bottom:8px;">📋</div>
+      <h1 style="font-size:1.5rem; font-weight:800; margin-bottom:6px;">意識チェックシート</h1>
+      <p style="font-size:var(--sz-small); color:#6b7280;">毎日の意識を記録して成長を可視化</p>
+    </div>
+
+    <!-- ユーザー一覧 -->
+    <div id="user-list" style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;"></div>
+
+    <!-- ▼▼▼ パスワード入力エリア（ユーザー選択後に表示） ▼▼▼ -->
+    <div id="pw-area" style="display:none; margin-bottom:14px;">
+      <div class="card" style="padding:16px;">
+        <div id="pw-user-label" style="font-weight:700; margin-bottom:10px; font-size:0.9rem;"></div>
+        <div class="pw-hint">🔑 パスワードを入力してください（このユーザー作成時に設定したもの）</div>
+        <div style="display:flex; gap:8px; margin-bottom:6px;">
+          <input type="password" id="pw-input" placeholder="パスワード" style="flex:1;"
+            onkeydown="if(event.key==='Enter') doLogin()" />
+          <button class="btn btn-primary" onclick="doLogin()" style="white-space:nowrap;">開く</button>
+          <button class="btn btn-outline" onclick="cancelLogin()" style="white-space:nowrap;">戻る</button>
+        </div>
+        <div id="pw-error" style="color:#ef4444; font-size:var(--sz-small); display:none;"></div>
+      </div>
+    </div>
+    <!-- ▲▲▲ パスワード入力エリア ▲▲▲ -->
+
+    <!-- 新規ユーザー作成フォーム -->
+    <div id="create-area" style="display:none; margin-bottom:12px;">
+      <div class="card" style="padding:16px;">
+        <div style="font-weight:700; margin-bottom:12px; font-size:0.9rem;">新しいユーザーを追加</div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <input type="text" id="new-name" placeholder="名前を入力" />
+
+          <!-- ▼▼▼ パスワード設定フィールド ▼▼▼ -->
+          <div class="pw-hint">🔑 次回ログイン時に使うパスワードを設定してください</div>
+          <input type="password" id="new-pw" placeholder="パスワードを設定" />
+          <!-- ▲▲▲ パスワード設定フィールド ▲▲▲ -->
+
+          <div id="create-error" style="color:#ef4444; font-size:var(--sz-small); display:none;"></div>
+          <div style="display:flex; gap:8px;">
+            <button class="btn btn-primary" onclick="createUser()" style="flex:1;">作成する</button>
+            <button class="btn btn-outline" onclick="toggleCreate(false)">キャンセル</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button id="btn-toggle-create" class="btn btn-primary" onclick="toggleCreate(true)"
+      style="width:100%; padding:13px;">＋ 新しいユーザーを追加</button>
+  </div>
+</div>
+
+<!-- ============================================================
+     シートビュー
+============================================================ -->
+<div id="page-sheet" class="page">
+  <div style="max-width:512px; margin:0 auto; padding:12px 16px 24px;">
+
+    <!-- 戻るボタン（保存範囲外） -->
+    <button onclick="goHome()"
+      style="background:none; border:none; cursor:pointer; font-family:var(--font);
+             font-size:0.85rem; color:#6b7280; display:flex; align-items:center; gap:4px; margin-bottom:10px; padding:4px 0;">
+      ← メニューに戻る
+    </button>
+
+    <!-- タイトルバー（保存範囲外） -->
+    <div class="sheet-header" id="sheet-header-bar">
+      <div class="toolbar">
+        <button class="btn btn-ghost" onclick="openSettings()" style="font-size:0.78rem; padding:6px 13px;">⚙ 設定</button>
+        <button class="btn btn-ghost" onclick="openHistory()"  style="font-size:0.78rem; padding:6px 13px;">📅 過去</button>
+        <button class="btn btn-ghost" onclick="doExport()"     style="font-size:0.78rem; padding:6px 13px;">💾 保存</button>
+      </div>
+      <div class="sheet-title">意識チェックシート</div>
+    </div>
+
+    <!-- ===== 画像保存範囲（ここから）：名前・日付〜反省欄 ===== -->
+    <div id="export-area" style="display:flex; flex-direction:column; gap:var(--gap); background:var(--c-bg);">
+
+      <!-- 名前・期間（タイトルバーの真下） -->
+      <div class="name-date-block">
+        <div class="display-name" id="disp-name">名前</div>
+        <div class="display-date" id="disp-date">期間</div>
+      </div>
+
+      <!-- チェック表 -->
+      <div class="card" style="overflow:hidden;">
+        <div style="overflow-x:auto;">
+          <table class="check-table" id="check-table">
+            <thead><tr id="check-thead"></tr></thead>
+            <tbody id="check-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 全て確定・全て編集ボタン -->
+      <div class="card" style="padding:var(--pad);">
+        <div style="display:flex; gap:8px;">
+          <button id="btn-confirm" class="btn btn-primary" onclick="confirmAll()" style="flex:1;">✓ 全て確定</button>
+          <button id="btn-edit"    class="btn btn-outline" onclick="editAll()"    style="flex:1;">✎ 全て編集</button>
+        </div>
+      </div>
+
+      <!-- 反省・気づき欄 -->
+      <div class="card" style="padding:var(--pad);">
+        <div style="display:flex; align-items:center; gap:7px; margin-bottom:12px;">
+          <span>💬</span>
+          <span style="font-weight:700; font-size:0.9rem;">今日の反省・気づき</span>
+        </div>
+        <div id="reflect-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+      </div>
+
+    </div>
+    <!-- ===== 画像保存範囲（ここまで） ===== -->
+
+    <!-- ボトムツールバー（保存範囲外） -->
+    <div class="card" style="margin-top:12px; padding:12px; display:flex; gap:8px;">
+      <button class="btn btn-outline" onclick="openSettings()" style="flex:1;">⚙ 設定</button>
+      <button class="btn btn-outline" onclick="openHistory()"  style="flex:1;">📅 過去</button>
+      <button class="btn btn-primary" onclick="doExport()"     style="flex:1;" id="btn-save-bottom">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     モーダル：設定
+============================================================ -->
+<div id="modal-settings" class="modal-overlay" onclick="if(event.target===this) closeSettings()">
+  <div class="modal-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+      <span style="font-weight:800; font-size:1.1rem;">設定モード</span>
+      <button onclick="closeSettings()" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:#6b7280;">✕</button>
+    </div>
+
+    <!-- 名前の変更 -->
+    <section style="margin-bottom:18px;">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:8px;">👤 名前の変更</div>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="s-name" placeholder="名前を入力..." style="flex:1;" />
+        <button class="btn btn-primary" onclick="saveUserName()" style="white-space:nowrap;">保存</button>
+      </div>
+    </section>
+
+    <!-- カラーテーマ -->
+    <section style="margin-bottom:18px;">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:8px;">🎨 カラーテーマ</div>
+      <div id="theme-btns" style="display:flex; gap:8px; flex-wrap:wrap;"></div>
+    </section>
+
+    <!-- 項目管理 -->
+    <section style="margin-bottom:18px;">
+      <div style="font-weight:700; font-size:0.85rem; margin-bottom:8px;">📝 項目の管理</div>
+      <div id="s-items" style="display:flex; flex-direction:column; gap:7px; margin-bottom:9px;"></div>
+      <div style="display:flex; gap:8px;">
+        <input type="text" id="s-new-item" placeholder="新しい項目を追加..." style="flex:1;"
+          onkeydown="if(event.key==='Enter') addItem()" />
+        <button class="btn btn-primary" onclick="addItem()">＋</button>
+      </div>
+    </section>
+
+    <!-- 次週へ -->
+    <section style="border-top:1px solid #e5e7eb; padding-top:14px;">
+      <button class="btn btn-primary" onclick="nextWeek()" style="width:100%; padding:11px;">→ 次週のシートに更新</button>
+      <p style="text-align:center; font-size:var(--sz-small); color:#9ca3af; margin-top:6px;">
+        現在のシートは保存され、新しい週のシートが作成されます
+      </p>
+    </section>
+  </div>
+</div>
+
+<!-- ============================================================
+     モーダル：過去シート
+============================================================ -->
+<div id="modal-history" class="modal-overlay" onclick="if(event.target===this) closeHistory()">
+  <div class="modal-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+      <span style="font-weight:800; font-size:1.1rem;">過去のシート</span>
+      <button onclick="closeHistory()" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:#6b7280;">✕</button>
+    </div>
+    <div id="history-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+  </div>
+</div>
+
+<!-- 保存中オーバーレイ -->
+<div id="overlay-exporting">
+  <div style="background:#fff; border-radius:1rem; padding:22px 28px; display:flex; gap:12px; align-items:center; font-weight:600; font-family:var(--font);">
+    <span style="font-size:1.3rem; display:inline-block; animation:spin 1s linear infinite;">⟳</span>
+    画像を生成中...
+  </div>
+</div>
+
+<!-- ============================================================
+     JavaScript
+============================================================ -->
+<script>
+/* ============================================================
+   ▼▼▼ カスタマイズしやすい定数 ▼▼▼
+============================================================ */
+
+// カラーテーマ定義
+// キー: { name表示名, bg背景色, light薄背景, text文字色, border境界線色 }
+const THEMES = {
+  blue:   { name:'ブルー',   bg:'#2563eb', light:'#eff6ff', text:'#1d4ed8', border:'#bfdbfe' },
+  green:  { name:'グリーン', bg:'#059669', light:'#ecfdf5', text:'#047857', border:'#a7f3d0' },
+  purple: { name:'パープル', bg:'#7c3aed', light:'#f5f3ff', text:'#6d28d9', border:'#ddd6fe' },
+  orange: { name:'オレンジ', bg:'#f97316', light:'#fff7ed', text:'#ea580c', border:'#fed7aa' },
+  pink:   { name:'ピンク',   bg:'#ec4899', light:'#fdf2f8', text:'#db2777', border:'#fbcfe8' },
+  dark:   { name:'ダーク',   bg:'#374151', light:'#1f2937', text:'#d1d5db', border:'#4b5563' },
+};
+
+// 曜日定義（順番通り：月〜日）
+const DAYS = [
+  { key:'mon', label:'月' },
+  { key:'tue', label:'火' },
+  { key:'wed', label:'水' },
+  { key:'thu', label:'木' },
+  { key:'fri', label:'金' },
+  { key:'sat', label:'土' },
+  { key:'sun', label:'日' },
+];
+
+// チェックシンボル定義
+const SYMBOLS = [
+  { v:'o', d:'○' },
+  { v:'x', d:'×' },
+  { v:'t', d:'△' },
+];
+
+// 新規ユーザーに最初から入る項目
+const DEFAULT_ITEMS = ['項目1', '項目2', '項目3'];
+
+/* ============================================================
+   ▲▲▲ カスタマイズしやすい定数ここまで ▲▲▲
+============================================================ */
+
+
+/* ── データストレージ（localStorage） ──────────────────── */
+// ブラウザを閉じてもデータは保存されます
+function loadDB() {
+  try { return JSON.parse(localStorage.getItem('csheet_db') || 'null') || { users:[], sheets:[] }; }
+  catch { return { users:[], sheets:[] }; }
+}
+function saveDB(db) { localStorage.setItem('csheet_db', JSON.stringify(db)); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+/* ── パスワードのハッシュ化 ─────────────────────────────── */
+// 平文ではなくハッシュ値で保存されます。元のパスワードは保存されません。
+function hash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  return String(h);
+}
+
+/* ── 日付ユーティリティ ─────────────────────────────────── */
+function getMonday(d) {
+  const dt = new Date(d); const day = dt.getDay();
+  dt.setDate(dt.getDate() + (day === 0 ? -6 : 1 - day));
+  dt.setHours(0,0,0,0); return dt;
+}
+function fmt(d)    { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+function pad(n)    { return String(n).padStart(2,'0'); }
+function parse(s)  { return new Date(s + 'T00:00:00'); }
+function short(d)  { return `${d.getMonth()+1}/${d.getDate()}`; }
+
+function weekRange(s, e) {
+  const sd = parse(s), ed = parse(e);
+  const [sy,sm,sday,ey,em,eday] = [sd.getFullYear(), sd.getMonth()+1, sd.getDate(), ed.getFullYear(), ed.getMonth()+1, ed.getDate()];
+  if (sy===ey && sm===em) return `${sy}年${sm}月${sday}日〜${eday}日`;
+  if (sy===ey) return `${sy}年${sm}月${sday}日〜${em}月${eday}日`;
+  return `${sy}年${sm}月${sday}日〜${ey}年${em}月${eday}日`;
+}
+
+function todayWeekStart() { return fmt(getMonday(new Date())); }
+function todayWeekEnd()   { const m = getMonday(new Date()); m.setDate(m.getDate()+6); return fmt(m); }
+function nextStart(s)     { const d = parse(s); d.setDate(d.getDate()+7);  return fmt(d); }
+function nextEnd(s)       { const d = parse(s); d.setDate(d.getDate()+13); return fmt(d); }
+
+function weekDates(startStr) {
+  return DAYS.map((day, i) => {
+    const d = parse(startStr); d.setDate(d.getDate() + i);
+    return { ...day, d, short: short(d) };
+  });
+}
+
+function emptyChecks()      { const o={}; DAYS.forEach(d=>o[d.key]='');    return o; }
+function emptyConfirmed()   { const o={}; DAYS.forEach(d=>o[d.key]=false); return o; }
+function emptyReflections() { const o={}; DAYS.forEach(d=>o[d.key]='');    return o; }
+
+/* ── アプリ状態 ──────────────────────────────────────────── */
+let app = { userId: null, sheetId: null, pendingUserId: null };
+
+/* ── テーマ適用 ─────────────────────────────────────────── */
+function applyTheme(key) {
+  const t = THEMES[key] || THEMES.blue;
+  const r = document.documentElement.style;
+  r.setProperty('--th',        t.bg);
+  r.setProperty('--th-light',  t.light);
+  r.setProperty('--th-text',   t.text);
+  r.setProperty('--th-border', t.border);
+  const hdr = document.getElementById('sheet-header-bar');
+  if (hdr) hdr.style.background = t.bg;
+  document.querySelectorAll('.btn-primary').forEach(b => b.style.background = t.bg);
+}
+
+/* ── HTML エスケープ ─────────────────────────────────────── */
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ============================================================
+   ホーム画面
+============================================================ */
+function renderHome() {
+  show('page-home'); hide('page-sheet');
+  $('pw-area').style.display = 'none';
+  $('create-area').style.display = 'none';
+  $('pw-input').value = ''; $('pw-error').style.display = 'none';
+  $('btn-toggle-create').textContent = '＋ 新しいユーザーを追加';
+
+  const db = loadDB(); const list = $('user-list');
+  list.innerHTML = '';
+  if (db.users.length === 0) {
+    list.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:24px;font-size:0.85rem;">まだユーザーがいません。下のボタンから追加してください。</div>';
+    return;
+  }
+  db.users.forEach(u => {
+    const btn = document.createElement('button');
+    btn.className = 'home-card';
+    btn.innerHTML = `
+      <div style="width:43px;height:43px;border-radius:11px;background:${THEMES[u.color_theme||'blue'].light};display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">👤</div>
+      <div style="flex:1;text-align:left;">
+        <div style="font-weight:700;font-size:0.95rem;">${esc(u.user_name)}</div>
+        <div style="font-size:var(--sz-small);color:#9ca3af;margin-top:2px;">🔒 パスワード保護</div>
+      </div>
+      <span style="color:#9ca3af;font-size:1.1rem;">›</span>`;
+    btn.onclick = () => selectUser(u.id);
+    list.appendChild(btn);
+  });
+}
+
+function selectUser(uid) {
+  app.pendingUserId = uid;
+  const u = loadDB().users.find(u=>u.id===uid);
+  $('pw-user-label').textContent = '👤 ' + u.user_name;
+  $('pw-area').style.display = 'block';
+  $('pw-error').style.display = 'none';
+  $('pw-input').value = '';
+  setTimeout(() => $('pw-input').focus(), 80);
+}
+
+function cancelLogin() {
+  app.pendingUserId = null;
+  $('pw-area').style.display = 'none';
+}
+
+function doLogin() {
+  const db = loadDB();
+  const u  = db.users.find(u=>u.id===app.pendingUserId);
+  if (!u) return;
+  const input = $('pw-input').value;
+
+  // パスワード照合
+  if (hash(input) !== u.password_hash) {
+    $('pw-error').textContent = 'パスワードが違います';
+    $('pw-error').style.display = 'block';
+    return;
+  }
+
+  app.userId = u.id; app.pendingUserId = null;
+
+  // 現在のシートを取得（なければ自動作成）
+  let sheet = db.sheets.find(s=>s.user_id===u.id && s.is_current);
+  if (!sheet) {
+    sheet = { id:uid(), user_id:u.id, week_start:todayWeekStart(), week_end:todayWeekEnd(),
+      items: DEFAULT_ITEMS.map(label=>({ label, checks:emptyChecks() })),
+      confirmed:emptyConfirmed(), reflections:emptyReflections(), is_current:true };
+    db.sheets.push(sheet); saveDB(db);
+  }
+  app.sheetId = sheet.id;
+  renderSheet();
+}
+
+function toggleCreate(show) {
+  $('create-area').style.display = show ? 'block' : 'none';
+  $('btn-toggle-create').textContent = show ? '閉じる' : '＋ 新しいユーザーを追加';
+  if (show) { $('new-name').value=''; $('new-pw').value=''; $('create-error').style.display='none'; setTimeout(()=>$('new-name').focus(),80); }
+}
+
+function createUser() {
+  const name = $('new-name').value.trim();
+  const pw   = $('new-pw').value.trim();
+  if (!name || !pw) { $('create-error').textContent='名前とパスワードを入力してください'; $('create-error').style.display='block'; return; }
+  const db = loadDB();
+  const u  = { id:uid(), user_name:name, password_hash:hash(pw), color_theme:'blue' };
+  db.users.push(u);
+  db.sheets.push({ id:uid(), user_id:u.id, week_start:todayWeekStart(), week_end:todayWeekEnd(),
+    items:DEFAULT_ITEMS.map(label=>({ label, checks:emptyChecks() })),
+    confirmed:emptyConfirmed(), reflections:emptyReflections(), is_current:true });
+  saveDB(db);
+  toggleCreate(false);
+  renderHome();
+}
+
+function goHome() { app.userId=null; app.sheetId=null; renderHome(); }
+
+/* ============================================================
+   シートビュー
+============================================================ */
+function renderSheet() {
+  show('page-sheet'); hide('page-home');
+  const db = loadDB();
+  const u  = db.users.find(u=>u.id===app.userId);
+  const s  = db.sheets.find(s=>s.id===app.sheetId);
+  if (!u || !s) { goHome(); return; }
+
+  applyTheme(u.color_theme || 'blue');
+
+  // 名前・期間（タイトルの真下エリア）
+  $('disp-name').textContent = u.user_name;
+  $('disp-date').textContent = weekRange(s.week_start, s.week_end);
+
+  renderTable(s, u);
+  updateConfirmBtns(s);
+  renderReflect(s, u);
+}
+
+/* ── チェック表 ─────────────────────────────────────────── */
+function renderTable(s, u) {
+  const t  = THEMES[u.color_theme] || THEMES.blue;
+  const wd = weekDates(s.week_start);
+
+  // ヘッダー
+  const thead = $('check-thead');
+  thead.innerHTML =
+    `<th class="col-item" style="background:${t.light};color:${t.text};border-right-color:${t.border};">項目</th>` +
+    wd.map(d =>
+      `<th class="col-day" style="background:${t.light};color:${t.text};border-left-color:${t.border};">
+        <div style="font-size:0.62rem;opacity:.7;">${d.short}</div>
+        <div>${d.label}</div>
+       </th>`
+    ).join('');
+
+  // ボディ
+  const tbody = $('check-tbody');
+  tbody.innerHTML = '';
+  (s.items||[]).forEach((item, itemIdx) => {
+    const tr  = document.createElement('tr');
+    const bg  = itemIdx%2===0 ? '#ffffff' : '#f9fafb';
+    tr.style.background = bg;
+
+    // 項目名
+    const tdItem = document.createElement('td');
+    tdItem.className = 'col-item';
+    tdItem.style.cssText = `border-right-color:${t.border};background:${bg};`;
+    tdItem.innerHTML = `<span style="color:#9ca3af;font-size:0.62rem;margin-right:2px;">${itemIdx+1}.</span>${esc(item.label)}`;
+    tr.appendChild(tdItem);
+
+    // 曜日ごと
+    wd.forEach(d => {
+      const td  = document.createElement('td');
+      td.className = 'col-day';
+      td.style.borderLeftColor = t.border;
+      const confirmed = !!s.confirmed?.[d.key];
+      const val = item.checks?.[d.key] || '';
+
+      if (confirmed) {
+        const cls = val==='o'?'sym-fixed-o': val==='x'?'sym-fixed-x': val==='t'?'sym-fixed-t':'sym-none';
+        const sym = SYMBOLS.find(s=>s.v===val);
+        td.innerHTML = `<div style="display:flex;justify-content:center;"><span class="${cls}">${sym?sym.d:'-'}</span></div>`;
+      } else {
+        td.innerHTML = `<div style="display:flex;justify-content:center;gap:2px;">` +
+          SYMBOLS.map(sym => {
+            const sel = val===sym.v;
+            const cls = sel ? (sym.v==='o'?'sel-o':sym.v==='x'?'sel-x':'sel-t') : '';
+            return `<button class="sym-btn ${cls}" onclick="toggleSym(${itemIdx},'${d.key}','${sym.v}')">${sym.d}</button>`;
+          }).join('') + `</div>`;
+      }
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+}
+
+function toggleSym(itemIdx, dayKey, symVal) {
+  const db = loadDB(); const s = db.sheets.find(s=>s.id===app.sheetId);
+  if (!s) return;
+  const cur = s.items[itemIdx]?.checks?.[dayKey]||'';
+  s.items[itemIdx].checks[dayKey] = cur===symVal ? '' : symVal;
+  saveDB(db);
+  const u = db.users.find(u=>u.id===app.userId);
+  renderTable(s, u);
+}
+
+/* ── 全て確定・全て編集（一括で全曜日を切り替え） ───────── */
+function updateConfirmBtns(s) {
+  const all = DAYS.every(d => s.confirmed?.[d.key]);
+  const any = DAYS.some(d  => s.confirmed?.[d.key]);
+  $('btn-confirm').disabled = all;
+  $('btn-edit').disabled    = !any;
+}
+
+function confirmAll() {
+  const db = loadDB(); const s = db.sheets.find(s=>s.id===app.sheetId);
+  if (!s) return;
+  // 全曜日を一括で true に設定して1回だけ保存
+  DAYS.forEach(d => { s.confirmed[d.key] = true; });
+  saveDB(db);
+  const u = db.users.find(u=>u.id===app.userId);
+  renderTable(s, u); updateConfirmBtns(s);
+}
+
+function editAll() {
+  const db = loadDB(); const s = db.sheets.find(s=>s.id===app.sheetId);
+  if (!s) return;
+  // 全曜日を一括で false に設定して1回だけ保存
+  DAYS.forEach(d => { s.confirmed[d.key] = false; });
+  saveDB(db);
+  const u = db.users.find(u=>u.id===app.userId);
+  renderTable(s, u); updateConfirmBtns(s);
+}
+
+/* ── 反省欄 ─────────────────────────────────────────────── */
+function renderReflect(s, u) {
+  const t  = THEMES[u.color_theme] || THEMES.blue;
+  const wd = weekDates(s.week_start);
+  const el = $('reflect-list');
+  el.innerHTML = '';
+  wd.forEach(d => {
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <label class="reflect-label" style="color:${t.text};">${d.label}（${d.short}）</label>
+      <textarea placeholder="反省や気づいたことを入力..."
+        oninput="saveReflect('${d.key}',this.value)"
+      >${esc(s.reflections?.[d.key]||'')}</textarea>`;
+    el.appendChild(div);
+  });
+}
+
+function saveReflect(dayKey, val) {
+  const db = loadDB(); const s = db.sheets.find(s=>s.id===app.sheetId);
+  if (!s) return; s.reflections[dayKey] = val; saveDB(db);
+}
+
+/* ============================================================
+   設定モーダル
+============================================================ */
+function openSettings() {
+  const db = loadDB();
+  const u  = db.users.find(u=>u.id===app.userId);
+  const s  = db.sheets.find(s=>s.id===app.sheetId);
+  if (!u) return;
+  $('s-name').value = u.user_name;
+  renderThemeBtns(u.color_theme);
+  renderSItems(s?.items||[]);
+  $('modal-settings').classList.add('open');
+}
+function closeSettings() { $('modal-settings').classList.remove('open'); renderSheet(); }
+
+function renderThemeBtns(current) {
+  const c = $('theme-btns'); c.innerHTML = '';
+  Object.entries(THEMES).forEach(([k,t]) => {
+    const b = document.createElement('button');
+    b.className = 'btn';
+    b.textContent = t.name;
+    b.style.cssText = `background:${k===current?t.bg:'#f3f4f6'};color:${k===current?'#fff':'#374151'};padding:7px 13px;font-size:0.8rem;`;
+    b.onclick = () => { changeTheme(k); renderThemeBtns(k); };
+    c.appendChild(b);
+  });
+}
+
+function saveUserName() {
+  const name = $('s-name').value.trim();
+  if (!name) return;
+  const db = loadDB(); const u = db.users.find(u=>u.id===app.userId);
+  if (!u) return; u.user_name = name; saveDB(db);
+  alert('名前を更新しました');
+}
+
+function changeTheme(key) {
+  const db = loadDB(); const u = db.users.find(u=>u.id===app.userId);
+  if (!u) return; u.color_theme = key; saveDB(db); applyTheme(key);
+}
+
+function renderSItems(items) {
+  const c = $('s-items'); c.innerHTML = '';
+  items.forEach((item, i) => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;gap:8px;align-items:center;background:#f9fafb;padding:7px 11px;border-radius:9px;';
+    div.innerHTML = `
+      <span style="color:#9ca3af;font-size:0.68rem;width:18px;">${i+1}.</span>
+      <input type="text" value="${esc(item.label)}" style="flex:1;padding:5px 8px;font-size:0.85rem;"
+        onchange="editItem(${i},this.value)" />
+      <button onclick="deleteItem(${i})" style="background:none;border:none;cursor:pointer;color:#f87171;padding:3px;">🗑</button>`;
+    c.appendChild(div);
+  });
+}
+
+function addItem() {
+  const inp = $('s-new-item'); const label = inp.value.trim(); if (!label) return;
+  const db = loadDB(); const s = db.sheets.find(s=>s.id===app.sheetId);
+  if (!s) return; s.items.push({ label, checks:emptyChecks() }); saveDB(db);
+  inp.value = ''; renderSItems(s.items);
+}
+
+function editItem(i, label) {
+  const db = loadDB(); const s = db.sheets.find(s=>s.id===app.sheetId);
+  if (!s) return; s.items[i].label = label; saveDB(db);
+}
+
+function deleteItem(i) {
+  const db = loadDB(); const s = db.sheets.find(s=>s.id===app.sheetId);
+  if (!s) return; s.items.splice(i,1); saveDB(db); renderSItems(s.items);
+}
+
+function nextWeek() {
+  if (!confirm('次週のシートを作成しますか？')) return;
+  const db = loadDB(); const s = db.sheets.find(s=>s.id===app.sheetId);
+  if (!s) return; s.is_current = false;
+  const ns = { id:uid(), user_id:app.userId, week_start:nextStart(s.week_start), week_end:nextEnd(s.week_start),
+    items:s.items.map(it=>({ label:it.label, checks:emptyChecks() })),
+    confirmed:emptyConfirmed(), reflections:emptyReflections(), is_current:true };
+  db.sheets.push(ns); saveDB(db); app.sheetId = ns.id;
+  closeSettings(); alert('次週のシートが作成されました');
+}
+
+/* ============================================================
+   過去シートモーダル
+============================================================ */
+function openHistory() {
+  const db = loadDB();
+  const sheets = db.sheets.filter(s=>s.user_id===app.userId).sort((a,b)=>b.week_start.localeCompare(a.week_start));
+  const list = $('history-list'); list.innerHTML = '';
+  if (sheets.length === 0) {
+    list.innerHTML='<div style="text-align:center;color:#9ca3af;padding:16px;">過去のシートはありません</div>';
+  } else {
+    sheets.forEach(s => {
+      const cur = s.id === app.sheetId;
+      const btn = document.createElement('button');
+      btn.style.cssText=`width:100%;display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-radius:10px;border:2px solid ${cur?'var(--th)':'#e5e7eb'};background:${cur?'var(--th-light)':'#fff'};cursor:pointer;font-family:var(--font);`;
+      btn.innerHTML=`<span style="font-weight:600;font-size:0.85rem;">${weekRange(s.week_start,s.week_end)}</span>${cur?'<span style="font-size:0.7rem;color:var(--th);font-weight:700;">現在</span>':''}`;
+      btn.onclick=()=>{ app.sheetId=s.id; closeHistory(); renderSheet(); };
+      list.appendChild(btn);
+    });
+  }
+  $('modal-history').classList.add('open');
+}
+function closeHistory() { $('modal-history').classList.remove('open'); }
+
+/* ============================================================
+   画像保存（export-area の範囲のみ）
+============================================================ */
+async function doExport() {
+  const el = $('export-area');
+  $('overlay-exporting').classList.add('show');
+  await new Promise(r=>setTimeout(r,150));
+  const canvas = await html2canvas(el, {
+    scale:2, useCORS:true, backgroundColor:'#f3f4f6',
+    width:el.offsetWidth, height:el.scrollHeight,
+    windowWidth:el.offsetWidth, windowHeight:el.scrollHeight,
+    scrollX:0, scrollY:0,
+  });
+  let q = 0.9, url = canvas.toDataURL('image/jpeg', q);
+  while (url.length > 1024*1024 && q > 0.3) { q -= 0.1; url = canvas.toDataURL('image/jpeg', q); }
+  const db = loadDB();
+  const u  = db.users.find(u=>u.id===app.userId);
+  const s  = db.sheets.find(s=>s.id===app.sheetId);
+  const a  = document.createElement('a');
+  a.download = `${u?.user_name||'sheet'}_${s?.week_start||'week'}.jpg`;
+  a.href = url; a.click();
+  $('overlay-exporting').classList.remove('show');
+}
+
+/* ── ヘルパー ───────────────────────────────────────────── */
+function $(id) { return document.getElementById(id); }
+function show(id) { $(id).classList.add('active'); }
+function hide(id) { $(id).classList.remove('active'); }
+
+/* ── 初期化 ─────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', renderHome);
+</script>
+</body>
+</html>

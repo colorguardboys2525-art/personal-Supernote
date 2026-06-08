@@ -1,0 +1,31 @@
+{
+  "name": "awareness-check-sheet",
+  "version": "1.0.0",
+  "description": "意識チェックシート - Firebase & GitHub統合版",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "http-server -p 8080",
+    "build": "echo 'Build process (minification, bundling, etc.)'",
+    "deploy": "firebase deploy",
+    "dev": "http-server -p 8080 -c-1"
+  },
+  "dependencies": {
+    "firebase": "^10.7.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "^13.1.0",
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": [
+    "awareness",
+    "check-sheet",
+    "firebase",
+    "github-pages"
+  ],
+  "author": "",
+  "license": "MIT"
+}
