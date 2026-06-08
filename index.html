@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>意識チェックシート</title>
+  <title>個人用-スーパーノートWEB</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
   <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
@@ -440,6 +440,41 @@
   </div>
 </div>
 
+<!-- ============================================================
+     モーダル：ユーザー削除確認（開発者のみ）
+============================================================ -->
+<div id="modal-delete-user" class="modal-overlay" onclick="if(event.target===this) closeDeleteUser()">
+  <div class="modal-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:18px;">
+      <span style="font-weight:800; font-size:1.1rem;">🗑 ユーザーを削除</span>
+      <button onclick="closeDeleteUser()" style="background:none; border:none; cursor:pointer; font-size:1.2rem; color:#6b7280;">✕</button>
+    </div>
+
+    <div style="background:#fee2e2; border:1.5px solid #f87171; border-radius:10px; padding:14px; margin-bottom:16px;">
+      <div style="color:#c41e3a; font-weight:700; margin-bottom:6px;">⚠️ 注意</div>
+      <div style="font-size:0.85rem; color:#991b1b;">
+        このユーザー「<span id="delete-user-name-display" style="font-weight:700;"></span>」と、
+        関連する<strong>すべてのシート</strong>が削除されます。
+        <br/>この操作は取り消せません。
+      </div>
+    </div>
+
+    <div style="margin-bottom:16px;">
+      <label style="display:block; font-weight:600; font-size:0.9rem; margin-bottom:8px;">
+        開発者用マスターパスワード
+      </label>
+      <input type="password" id="dev-password-input" placeholder="マスターパスワードを入力"
+        onkeydown="if(event.key==='Enter') confirmDeleteUser()" />
+      <div id="delete-error" style="color:#ef4444; font-size:var(--sz-small); display:none; margin-top:6px;"></div>
+    </div>
+
+    <div style="display:flex; gap:8px;">
+      <button class="btn btn-outline" onclick="closeDeleteUser()" style="flex:1;">キャンセル</button>
+      <button class="btn btn-primary" onclick="confirmDeleteUser()" style="flex:1; background:#ef4444; opacity:0.9;">削除する</button>
+    </div>
+  </div>
+</div>
+
 <!-- 保存中オーバーレイ -->
 <div id="overlay-exporting">
   <div style="background:#fff; border-radius:1rem; padding:22px 28px; display:flex; gap:12px; align-items:center; font-weight:600; font-family:var(--font);">
@@ -487,6 +522,10 @@ const SYMBOLS = [
 
 // 新規ユーザーに最初から入る項目
 const DEFAULT_ITEMS = ['項目1', '項目2', '項目3'];
+
+// 開発者用マスターパスワード（削除機能を使用する際に必要）
+// セキュリティのため、本番環境では変更してください
+const DEVELOPER_PASSWORD = 'bandai765';
 
 /* ============================================================
    ▲▲▲ カスタマイズしやすい定数ここまで ▲▲▲
@@ -583,8 +622,12 @@ function renderHome() {
     return;
   }
   db.users.forEach(u => {
+    const container = document.createElement('div');
+    container.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:10px;';
+    
     const btn = document.createElement('button');
     btn.className = 'home-card';
+    btn.style.flex = '1';
     btn.innerHTML = `
       <div style="width:43px;height:43px;border-radius:11px;background:${THEMES[u.color_theme||'blue'].light};display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;">👤</div>
       <div style="flex:1;text-align:left;">
@@ -593,7 +636,21 @@ function renderHome() {
       </div>
       <span style="color:#9ca3af;font-size:1.1rem;">›</span>`;
     btn.onclick = () => selectUser(u.id);
-    list.appendChild(btn);
+    
+    // 削除ボタン（開発者のみ）
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'btn btn-outline';
+    deleteBtn.textContent = '🗑';
+    deleteBtn.style.cssText = 'padding:8px 12px;min-width:40px;';
+    deleteBtn.title = '開発者：このユーザーを削除（マスターパスワードが必要）';
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      requestDeleteUser(u.id, u.user_name);
+    };
+    
+    container.appendChild(btn);
+    container.appendChild(deleteBtn);
+    list.appendChild(container);
   });
 }
 
@@ -904,6 +961,66 @@ function openHistory() {
   $('modal-history').classList.add('open');
 }
 function closeHistory() { $('modal-history').classList.remove('open'); }
+
+/* ============================================================
+   ユーザー削除（開発者のみ）
+============================================================ */
+function requestDeleteUser(userId, userName) {
+  $('delete-user-name-display').textContent = userName;
+  $('dev-password-input').value = '';
+  $('delete-error').style.display = 'none';
+  $('modal-delete-user').classList.add('open');
+  setTimeout(() => $('dev-password-input').focus(), 80);
+}
+
+function closeDeleteUser() {
+  $('modal-delete-user').classList.remove('open');
+  $('dev-password-input').value = '';
+  $('delete-error').style.display = 'none';
+}
+
+function confirmDeleteUser() {
+  const inputPassword = $('dev-password-input').value;
+  
+  // 開発者パスワード確認
+  if (inputPassword !== DEVELOPER_PASSWORD) {
+    $('delete-error').textContent = '⚠️ マスターパスワードが違います';
+    $('delete-error').style.display = 'block';
+    return;
+  }
+  
+  // ユーザーを取得
+  const db = loadDB();
+  let deleteUserId = null;
+  
+  // 削除対象ユーザーのIDを特定（モーダルから取得）
+  const deleteUserName = $('delete-user-name-display').textContent;
+  const userToDelete = db.users.find(u => u.user_name === deleteUserName);
+  
+  if (!userToDelete) {
+    $('delete-error').textContent = 'ユーザーが見つかりません';
+    $('delete-error').style.display = 'block';
+    return;
+  }
+  
+  deleteUserId = userToDelete.id;
+  
+  // ユーザーと関連するすべてのシートを削除
+  db.sheets = db.sheets.filter(s => s.user_id !== deleteUserId);
+  
+  // ユーザーを削除
+  db.users = db.users.filter(u => u.id !== deleteUserId);
+  
+  // DB に保存
+  saveDB(db);
+  
+  // 削除確認
+  alert(`✅ ユーザー「${deleteUserName}」と関連するすべてのシートを削除しました`);
+  
+  // モーダルを閉じてホーム画面を再描画
+  closeDeleteUser();
+  renderHome();
+}
 
 /* ============================================================
    画像保存（export-area の範囲のみ）
